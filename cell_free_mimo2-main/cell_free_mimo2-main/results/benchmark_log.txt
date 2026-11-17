@@ -1,0 +1,35 @@
+Channel validation...
+  power_ratio_mean         0.9962920836468548
+  power_ratio_ok           True
+  antenna_corr_v2x         0.9803650819200218
+  antenna_corr_iid         0.02383887871773978
+  f_max_hz                 218.66979574101077
+  ray_doppler_max_hz       220.49946847306717
+  doppler_ok               True
+  time_corr_delays_ms      [0.0, 0.25, 0.5, 1.0, 2.0, 5.0]
+  time_corr_measured       [1.0, 0.957, 0.861, 0.547, 0.17, 0.307]
+  time_corr_clarke         [1.0, 0.971, 0.885, 0.581, 0.163, 0.297]
+  time_corr_ok             True
+  coherence_time_ms        1.9344235383152544
+  accel_phase_max_rad      0.0618268447595793
+  accel_phase_bound_rad    0.06182742814757461
+  delay_spread_max_ns      200.13735564220607
+  delay_spread_bound_ns    200.1384571188912
+  delay_ok                 True
+  median_link_snr_db       11.824649058413023
+
+Running 20 training jobs on 15 workers...
+  done in 26.3 min
+# Benchmark summary
+
+## Claims derived from the numbers
+
+1. Bug fixes changed the QNN (cloud + edge) min rate by -41.0% (1.087 → 0.641), p = 0.275: **not a significant improvement**.
+2. Bug fixes changed the QNN assignment + MR min rate by -37.8% (1.915 → 1.191), p = 0.252: **not a significant improvement**.
+3. QNN (cloud + edge) reaches 27.6% (i.i.d.) vs 29.9% (V2X) of the search-based min rate → change of +2.3 points: **robust** on the realistic channel.
+4. QNN assignment + MR reaches 48.5% (i.i.d.) vs 50.9% (V2X) of the search-based min rate → change of +2.3 points: **robust** on the realistic channel.
+5. QNN assignment + MR: a decision stays within 90% of its fresh min rate for 2 ms at 20 km/h, 1 ms at 40 km/h, 0.5 ms at 80 km/h, 1 ms at 120 km/h → at 40 km/h the cloud should re-decide every 1 ms (grid resolution: 0, 0.25, 0.5, 1, 2, 5 ms).
+6. Search-based + MR: a decision stays within 90% of its fresh min rate for 0.5 ms at 20 km/h, 0.25 ms at 40 km/h, < 0.25 ms at 80 km/h, < 0.25 ms at 120 km/h → at 40 km/h the cloud should re-decide every 0.25 ms (grid resolution: 0, 0.25, 0.5, 1, 2, 5 ms).
+7. Training QNN (cloud + edge) on V2X instead of i.i.d. data changes its V2X min rate by +13.5% (p = 0.606, not significant).
+8. Training QNN assignment + MR on V2X instead of i.i.d. data changes its V2X min rate by +0.6% (p = 0.968, not significant).
+9. The V2X channel reproduces the SOP.m physics: antenna correlation 0.98 (i.i.d.: 0.02), time correlation follows Clarke's J0 (coherence ≈ 1.9 ms at 40 km/h), delay spread 200 ns.

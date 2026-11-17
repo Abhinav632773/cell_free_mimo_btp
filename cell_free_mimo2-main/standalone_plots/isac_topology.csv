@@ -1,0 +1,10 @@
+Node_Type,Node_ID,X_m,Y_m
+ISAC_Node,ISAC-0,75.0,380.0
+ISAC_Node,ISAC-1,420.0,410.0
+ISAC_Node,ISAC-2,80.0,90.0
+ISAC_Node,ISAC-3,390.0,110.0
+Comm_User,User-0,180.0,220.0
+Comm_User,User-1,260.0,320.0
+Comm_User,User-2,340.0,180.0
+Radar_Target,Target-0,250.0,250.0
+

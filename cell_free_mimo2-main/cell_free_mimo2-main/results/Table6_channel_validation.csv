@@ -1,0 +1,8 @@
+﻿Property,Measured Value,Status
+Power ratio mean,0.9963,OK
+Antenna correlation (V2X),0.9804,—
+Antenna correlation (i.i.d),0.0238,—
+Max Doppler [Hz],218.67,OK
+Coherence time [ms],1.934,—
+Delay spread max [ns],200.1,OK
+Median link SNR [dB],11.82,—

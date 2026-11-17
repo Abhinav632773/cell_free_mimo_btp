@@ -1,0 +1,4 @@
+﻿Method,Min Rate [bits/s/Hz],Sum Rate [bits/s/Hz],Radar SNR [dB],Sensing Rate,ISAC Utility
+QNN + DFRC,2.0626,11.0485,43.24,7.1819,4.6222
+Search + DFRC,2.9698,11.7667,42.85,7.1172,5.0435
+Random + DFRC,1.2825,8.6145,42.30,7.0263,4.1544

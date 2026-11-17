@@ -1,0 +1,449 @@
+%% ============================================================
+% NON-WSSUS V2X CHANNEL RESPONSE WITH ACCELERATION
+%% ============================================================
+
+clear;
+clc;
+close all;
+
+rng(10);
+
+c = 299792458;                  % Speed of light [m/s]
+
+fc = 5.9e9;                     % Carrier frequency [Hz]
+
+B = 10e6;                       % Bandwidth [Hz]
+
+N = 64;                         % Number of subcarriers
+
+d = 30;                         % Ring radius [m]
+
+D = 300;                        % Initial Tx-Rx distance [m]
+
+
+T0 = 10e-3;                     % 10 ms, OBSERVATION INTERVAL
+
+numSymbols = 1280;
+
+t = linspace(0,T0,numSymbols);
+
+%% ============================================================
+% 4. VEHICLE VELOCITIES
+%% ============================================================
+
+vT = 40/3.6;                    % m/s
+
+vR = 40/3.6;                    % m/s
+
+%% ============================================================
+% 5. DIRECTIONS OF MOTION
+%% ============================================================
+
+gammaT = deg2rad(105);
+
+gammaR = deg2rad(70);
+
+%% ============================================================
+% 6. DIRECTIONS OF ACCELERATION
+%% ============================================================
+
+betaT = deg2rad(105);
+
+betaR = deg2rad(250);
+
+%% ============================================================
+% 7. ACCELERATIONS
+%% ============================================================
+
+aT = 10;                        % m/s^2
+
+aR = 10;                        % m/s^2
+
+%% ============================================================
+% 8. DERIVED PARAMETERS
+%% ============================================================
+
+lambda = c/fc;
+
+deltaF = B/N;
+
+fmaxT = vT/lambda;
+
+fmaxR = vR/lambda;
+
+%% ============================================================
+% 9. NUMBER OF FINITE MULTIPATH COMPONENTS
+%
+% L is not numerically fixed by the paper for a finite
+% realization.
+%% ============================================================
+
+L = 100;
+
+%% ============================================================
+% 10. SUBCARRIER FREQUENCIES
+%% ============================================================
+
+k = (-N/2:N/2-1).';
+
+fSub = k*deltaF;
+
+%% ============================================================
+% 11. RANDOM PATH PHASES
+%
+% theta_l ~ Uniform[-pi,pi)
+%% ============================================================
+
+theta = -pi + 2*pi*rand(L,1);
+
+%% ============================================================
+% 12. POSITIVE PATH GAINS
+%% ============================================================
+
+g = sqrt( ...
+    randn(L,1).^2 + ...
+    randn(L,1).^2 );
+
+g = g/sqrt(sum(abs(g).^2));
+
+%% ============================================================
+% 13. RANDOM SCATTERER ANGLES
+%% ============================================================
+
+phiR = -pi + 2*pi*rand(L,1);
+
+%% ============================================================
+% 14. ONE-RING GEOMETRY
+%% ============================================================
+
+xR = 0;
+yR = 0;
+
+xT = D;
+yT = 0;
+
+xS = d*cos(phiR);
+yS = d*sin(phiR);
+
+%% ============================================================
+% 15. PATH DISTANCES
+%% ============================================================
+
+dR = sqrt( ...
+    (xS-xR).^2 + ...
+    (yS-yR).^2 );
+
+dT = sqrt( ...
+    (xS-xT).^2 + ...
+    (yS-yT).^2 );
+
+%% ============================================================
+% 16. PATH ANGLES
+%% ============================================================
+
+phiRgeom = atan2( ...
+    yS-yR, ...
+    xS-xR );
+
+phiT = atan2( ...
+    yS-yT, ...
+    xS-xT );
+
+%% ============================================================
+% 17. INITIAL PATH DELAY
+%
+% tau_l(0) = (dT_l+dR_l)/c
+%% ============================================================
+
+tau0 = (dT+dR)/c;
+
+%% ============================================================
+% 18. VELOCITY-INDUCED DOPPLER
+%
+% f_l^S =
+% fmaxT cos(phiT-gammaT)
+% +
+% fmaxR cos(phiR-gammaR)
+%% ============================================================
+
+fS = ...
+    fmaxT*cos(phiT-gammaT) ...
+    + ...
+    fmaxR*cos(phiRgeom-gammaR);
+
+%% ============================================================
+% 19. CONSTANT ACCELERATION COEFFICIENT A_l
+%
+% Define
+%
+% A_l =
+%
+% (aT/lambda)*cos(phiT-betaT)
+% +
+% (aR/lambda)*cos(phiR-betaR)
+%
+% Unit: Hz/s
+%
+% Then:
+%
+% f_l^A(t) = A_l * t
+%
+% and the acceleration phase at the center subcarrier is:
+%
+% pi*A_l*t^2
+%% ============================================================
+
+A = ...
+    (aT/lambda)*cos(phiT-betaT) ...
+    + ...
+    (aR/lambda)*cos(phiRgeom-betaR);
+
+%% ============================================================
+% 20. STORAGE
+%% ============================================================
+
+H = zeros(N,numSymbols);
+
+tauMatrix = zeros(L,numSymbols);
+
+fAMatrix = zeros(L,numSymbols);
+
+%% ============================================================
+% 21. CHANNEL GENERATION
+%% ============================================================
+
+for it = 1:numSymbols
+
+    tt = t(it);
+
+    %% --------------------------------------------------------
+    % Acceleration Doppler contribution
+    %
+    % f_l^A(t) = A_l*t
+    %% --------------------------------------------------------
+
+    fA = A*tt;
+
+    fAMatrix(:,it) = fA;
+
+    %% --------------------------------------------------------
+    % Time-varying propagation delay
+    %
+    % tau_l(t)
+    % =
+    % tau_l(0)
+    % - t/fc [f_l^S + f_l^A(t)/2]
+    %% --------------------------------------------------------
+
+    tau = ...
+        tau0 ...
+        - ...
+        (tt/fc).*( ...
+        fS + fA/2 );
+
+    tauMatrix(:,it) = tau;
+
+    %% --------------------------------------------------------
+    % Channel response
+    %% --------------------------------------------------------
+
+    for ik = 1:N
+
+        totalPhase = ...
+            theta ...
+            + ...
+            2*pi*tau.* ...
+            (fc + fSub(ik));
+
+        H(ik,it) = ...
+            sum( ...
+            g .* exp(-1j*totalPhase) ...
+            );
+
+    end
+
+end
+
+%% ============================================================
+% 22. SELECT CENTER SUBCARRIER
+%% ============================================================
+
+[~,centerSC] = min(abs(fSub));
+
+Hresponse = H(centerSC,:);
+
+%% ============================================================
+% SELECT ONE PATH
+%% ============================================================
+
+pathIndex = 1;
+
+%% ============================================================
+% FIGURE 1
+% CHANNEL MAGNITUDE
+%% ============================================================
+
+figure;
+
+plot( ...
+    t*1e3, ...
+    abs(Hresponse), ...
+    'LineWidth',1.8);
+
+grid on;
+
+xlabel('Time (ms)');
+
+ylabel('$|H_i(k_0)|$', ...
+       'Interpreter','latex');
+
+title('Non-WSSUS V2X Channel Response');
+
+xlim([0 T0*1e3]);
+
+%% ============================================================
+% FIGURE 2
+% TIME-VARYING PATH DELAY
+%% ============================================================
+
+figure;
+
+plot( ...
+    t*1e3, ...
+    tauMatrix(pathIndex,:)*1e9, ...
+    'LineWidth',1.8);
+
+grid on;
+
+xlabel('Time (ms)');
+
+ylabel('$\tau_{\ell}(t)\;[\mathrm{ns}]$', ...
+       'Interpreter','latex');
+
+title('Time-Varying Path Delay - Non-WSSUS V2X Model');
+
+xlim([0 T0*1e3]);
+
+%% ============================================================
+% FIGURE 3
+% ACCELERATION DOPPLER TERM
+%
+% f_l^A(t) = A_l*t
+%
+% This is linear with time.
+%% ============================================================
+
+figure;
+
+plot( ...
+    t*1e3, ...
+    fAMatrix(pathIndex,:), ...
+    'LineWidth',1.8);
+
+grid on;
+
+xlabel('Time (ms)');
+
+ylabel('$\dot{f}_{\ell}^{A}(t)\;[\mathrm{Hz}]$', ...
+       'Interpreter','latex');
+
+title('Acceleration-Induced Doppler Term');
+
+xlim([0 T0*1e3]);
+
+%% ============================================================
+% FIGURE 4
+%
+% ACCELERATION-INDUCED QUADRATIC PHASE
+%
+% At center subcarrier:
+%
+% exp(j*pi*A_l*t^2)
+%
+% Its phase is:
+%
+% phi_acc,l(t) = pi*A_l*t^2
+%
+% This MUST be quadratic in time.
+%% ============================================================
+
+phiAccelerationPDF = ...
+    pi*A(pathIndex).*(t.^2);
+
+figure;
+
+plot( ...
+    t*1e3, ...
+    phiAccelerationPDF, ...
+    'LineWidth',1.8);
+
+grid on;
+
+xlabel('Time (ms)');
+
+ylabel('$\pi A_{\ell}t^2\;[\mathrm{rad}]$', ...
+       'Interpreter','latex');
+
+title('Acceleration-Induced Quadratic Phase - Non-WSSUS V2X');
+
+xlim([0 T0*1e3]);
+
+
+%% ============================================================
+% 23. DISPLAY PARAMETERS
+%% ============================================================
+
+fprintf('\n');
+
+fprintf('NON-WSSUS V2X CHANNEL\n');
+
+fprintf('---------------------------------------------\n');
+
+fprintf('Carrier frequency       = %.2f GHz\n', ...
+    fc/1e9);
+
+fprintf('Bandwidth               = %.2f MHz\n', ...
+    B/1e6);
+
+fprintf('Wavelength              = %.5f m\n', ...
+    lambda);
+
+fprintf('Velocity Tx             = %.2f km/h\n', ...
+    vT*3.6);
+
+fprintf('Velocity Rx             = %.2f km/h\n', ...
+    vR*3.6);
+
+fprintf('Acceleration Tx         = %.2f m/s^2\n', ...
+    aT);
+
+fprintf('Acceleration Rx         = %.2f m/s^2\n', ...
+    aR);
+
+fprintf('Observation interval    = %.2f ms\n', ...
+    T0*1e3);
+
+fprintf('Number of rays          = %d\n', ...
+    L);
+
+fprintf('Selected path           = %d\n', ...
+    pathIndex);
+
+fprintf('\n');
+
+fprintf('A_l for selected path   = %.6f Hz/s\n', ...
+    A(pathIndex));
+
+fprintf('fA_l(0)                 = %.6f Hz\n', ...
+    fAMatrix(pathIndex,1));
+
+fprintf('fA_l(T0)                = %.6f Hz\n', ...
+    fAMatrix(pathIndex,end));
+
+fprintf('Quadratic phase at 0 ms = %.6f rad\n', ...
+    phiAccelerationPDF(1));
+
+fprintf('Quadratic phase at 10 ms= %.6f rad\n', ...
+    phiAccelerationPDF(end));
+
+fprintf('---------------------------------------------\n');

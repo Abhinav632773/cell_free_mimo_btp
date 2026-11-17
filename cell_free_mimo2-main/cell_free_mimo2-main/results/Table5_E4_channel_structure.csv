@@ -1,0 +1,4 @@
+﻿Metric,i.i.d. Rayleigh,V2X One-Ring
+Mean ||h||² / (β·N_TX),0.845,1.057
+10th percentile (deep fades),0.276,0.066
+Beam leakage to other users,0.420,0.700

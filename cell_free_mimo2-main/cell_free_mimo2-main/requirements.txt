@@ -1,0 +1,13 @@
+# Core dependencies for Cell-Free MIMO with Quantum Neural Networks (QNN)
+# Tested with Python 3.10+ / PennyLane 0.45.1
+
+# Quantum Machine Learning framework
+pennylane>=0.40.0,<=0.45.1
+pennylane-lightning>=0.40.0,<=0.45.0
+
+# Numerical computing and scientific libraries
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Plotting and visualization
+matplotlib>=3.7.0
